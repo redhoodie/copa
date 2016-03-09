@@ -75,9 +75,7 @@ module Copa
   end
 
   module Api
-    #BASE_URL = "http://#{ENV['CHURCH_ONLINE_PLATFORM_ID']}.churchonline.org/api/v1"
-    BASE_URL = "http://live.life.church/api/v1/"
-    EXPIRES = proc { 1.minutes }
+    BASE_URL = ENV['CHURCH_ONLINE_PLATFORM_API_URL'] || "http://#{ENV['CHURCH_ONLINE_PLATFORM_ID']}.churchonline.org/api/v1"
     
     # API end points
     def self.get_events
@@ -105,7 +103,7 @@ module Copa
               BASE_URL + '/' + url
             end
 
-          Rails.cache.fetch("cop-#{uri}", expires_in: EXPIRES.call) do
+          Rails.cache.fetch("cop-#{uri}", expires_in: 1.minutes) do
             response = JSON.parse(open(uri).read)
           end
         end
