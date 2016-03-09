@@ -24,9 +24,13 @@ module Copa
     live_event_time&.event
   end
 
-  def self.next_event
+  def self.next_event_time
     next_event_data = Api::get_upcomming_event_times&.first
-    EventTime.new(next_event_data).event
+    EventTime.new(next_event_data)
+  end
+
+  def self.next_event
+    next_event_time&.event
   end
 
   def self.next_days_event_times
