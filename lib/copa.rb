@@ -34,7 +34,7 @@ module Copa
   end
 
   def self.next_days_event_times
-    next_event_date = next_event_time&.time
+    next_event_date = next_event_time&.event_time.to_date
     return [] if next_event_date.blank?
 
     event_times = []
