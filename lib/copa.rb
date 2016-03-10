@@ -3,21 +3,17 @@ require 'json'
 
 module Copa
   def self.is_live?
-    Api::current_event.dig('item').present?
+    Api::get_current_event.dig('item').present?
   rescue OpenURI::HTTPError => exception
     raise exception unless exception.message.to_i == 404
     return false
   end
 
   def self.live_event_time
-    live_date_time = Api::get_current_event.dig('eventStartTime')&.to_datetime
-    return nil if live_date_time.blank?
+    live_event = Api::get_current_event
+    return nil if live_event.dig('eventStartTime')&.to_datetime.blank?
 
-    Api::get_upcomming_event_times.each do |event_data|
-      return EventTime.new(event_data) if event_data.dig('eventTime')&.to_datetime == live_date_time
-    end
-
-    nil
+    EventTime.new(live_event)
   end
 
   def self.live_event
@@ -64,17 +60,17 @@ module Copa
     attr_accessor :id, :organization_id, :description, :duration, :enabled, :speaker, :title, :event_notes, :volunteer_notes, :facebook_message, :twitter_message, :email_message, :social_link, :slides_paused, :enabled_features, :custom_tab, :video_profile_status
   end
 
-  class EventTime < Base
-    attr_accessor :event_time_id, :event_id, :event_time, :event_end_time, :event_title, :event_time_doors_open_offset
+  class EventTime < Event
+    attr_accessor :event_time_id, :event_id, :event_time, :event_start_time, :event_end_time, :event_title, :event_time_doors_open_offset, :doors_open_offset, :video_offset, :chat_status, :offline_prayer_url, :prayer_tagline, :remote_login_url, :request_prayer_modal, :is_live
     def event
       Event.new(Api.get_event(self.event_id))
     end
 
     def time
-      event_time.to_datetime
+      (event_time || event_start_time).to_datetime.in_time_zone
     end
     def end_time
-      event_end_time.to_datetime
+      event_end_time.to_datetime.in_time_zone
     end
   end
 
@@ -87,7 +83,10 @@ module Copa
     end
 
     def self.get_current_event
-      api_call("events/current").dig 'response', 'item'
+      api_call("events/current?expand=event").dig 'response', 'item'
+    rescue OpenURI::HTTPError => exception
+      raise exception unless exception.message.to_i == 404
+      return nil
     end
 
     def self.get_upcomming_event_times
